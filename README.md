@@ -82,3 +82,7 @@ Due to security protocols, you must manually extract your token from the DingTal
 * The developer is not responsible for any consequences resulting from the use of this script, including but not limited to account suspension or system restrictions.
 
 * Please follow the venue management regulations and use the system fairly.
+
+## ❗Attention
+
+* When running the program, please close the packet capture software such as Charles and Fiddler.
