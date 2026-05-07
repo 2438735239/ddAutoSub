@@ -71,6 +71,14 @@ Due to security protocols, you must manually extract your token from the DingTal
 
 * Integrated a real-time visual log viewer.
 
+**v0.2.0 (2026-05-07)**
+
+* The concurrent venue snatching function has been added.
+
+* Added the option to manually input "User-Agent".
+
+* Increase the number of repeated attempts for the court takeover operation.
+
 ---
 
 ## ⚖️ Disclaimer
