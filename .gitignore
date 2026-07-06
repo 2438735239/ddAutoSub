@@ -1,0 +1,24 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller
+build/
+dist/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.vscode/
+
+# Interview Q&A (not project-related)
+面试问题清单.md
+interview_qa_output.md
+assemble_qa.py
+build_qa.py

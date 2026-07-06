@@ -1,96 +1,197 @@
-# ddAutoSub 🏸
+# ⚡ 无敌抢场王
 
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+> 杭州电子科技大学综合馆羽毛球场地自动预约工具
 
-A graphical venue reservation assistant developed in Python, specifically designed for the HDU sports venue reservation system. It supports timed triggering, parameter customization, and automatic reservation process.
-
----
-
-## ✨ Features
-
-- **Scheduled Booking**: Built-in timer that triggers the booking request precisely at 20:00:00 with millisecond-level precision.
-- **Auto Date Calculation**: Automatically calculates the `T+2` booking date (no manual input required).
-- **Intuitive GUI**: A clean Tkinter interface for managing tokens, selecting courts, and monitoring real-time logs.
-- **Multi-Slot Support**: Supports single-slot (1 hour) or consecutive-slot (2 hours) reservations.
-- **Asynchronous Architecture**: Utilizes multi-threading to ensure the UI remains responsive during the countdown and booking process.
+一个基于 Python 的桌面应用，能够自动从钉钉抓取认证凭证，并在每晚 20:00 准时并发抢场，帮你告别手动预约的痛苦。
 
 ---
 
-## 📸 Preview
+## ✨ 功能特性
 
-<img width="226" alt="微信图片_2026-04-27_100435_451" src="https://github.com/user-attachments/assets/fe623d3e-4ee2-4b5a-ba6a-f9113e082e0c" />
+- **🕵️ 一键抓包** — 点击按钮自动启动 mitmproxy 代理，无需手动复制 Token 和 User-Agent
+- **⏱ 定时执行** — 设置任务后在后台等待，每晚 20:00 分准时发起请求
+- **🚀 多场地并发** — 同时对多个场地号发起请求，大幅提高成功率
+- **🔄 403 自动重试** — 遇到 Token 过期自动刷新并重试，无需人工干预
+- **🧹 极简界面** — 只保留时间段选择和两个按钮，去除一切冗余信息
+- **📝 日志留存** — 每次运行的详细日志自动保存至 `~/Library/Logs/ddAutoSub/`
 
 ---
 
-## 🚀 Quick Start
+## 📸 界面概览
 
-### 1. Prerequisites
-Ensure you have Python 3.9 or higher installed on your system.
-
-Install the required dependency:
-```bash
-pip install requests
 ```
-### 2. Obtain Authorization Token
-Due to security protocols, you must manually extract your token from the DingTalk applet:
-
-&emsp; &emsp; **1.** Use a packet capture tool (e.g., Charles, Fiddler, or HTTP Canary).
-
-&emsp; &emsp; **2.** Enter the venue reservation in DingTalk.
-
-&emsp; &emsp; **3.** Locate any request sent to sportmeta.hdu.edu.cn.
-
-&emsp; &emsp; **4.** Copy the string following Bearer  in the Authorization header.
-
----
-
-## 🛠 Parameter Guide
-
-**Bearer Token:** Your identity credential. Note that tokens usually have an expiration time.
-
-**Site ID:** The specific court number (e.g., Court #12).
-
-**Time Slots:**
-
-* [0] corresponds to 08:00 - 09:00.
-
-* [0, 1] corresponds to 08:00 - 10:00 (consecutive 2-hour booking).
+┌──────────────────────────┐
+│                          │
+│       无敌抢场王          │
+│    抓包 · 预约 · 全自动   │
+│                          │
+│  ┌────────────────────┐  │
+│  │ 时间段    [▼ 选择] │  │
+│  │ ────────────────── │  │
+│  │ [   抓取凭证    ]   │  │
+│  │   已就绪 · 可开始   │  │
+│  └────────────────────┘  │
+│                          │
+│  [ 定时抢场 · 今晚20:00 ]│
+│                          │
+│  日志  抢场日志_xxx.log   │
+└──────────────────────────┘
+```
 
 ---
 
-## 📝 Changelog
+## 📋 环境要求
 
-**v0.1.0 (2026-04-27)**
-
-* Initial Release.
-
-* Implemented the core two-step logic: creat_book_info and creat_order.
-
-* Added the 20:00:00 scheduled execution feature.
-
-* Integrated a real-time visual log viewer.
-
-**v0.2.0 (2026-05-07)**
-
-* The concurrent venue snatching function has been added.
-
-* Added the option to manually input "User-Agent".
-
-* Increase the number of repeated attempts for the court takeover operation.
+| 依赖 | 版本要求 | 说明 |
+|------|----------|------|
+| macOS | 12.0+ | 仅支持 macOS |
+| Python | 3.9+ | 推荐 3.11 |
+| mitmproxy | 9.x | `pip install mitmproxy` |
+| 钉钉 | 最新版 | 用于打开体育预约页面 |
 
 ---
 
-## ⚖️ Disclaimer
+## 🚀 快速开始
 
-* This project is for educational and research purposes only.
+### 1. 克隆项目
 
-* Do not use this script for commercial purposes or to unfairly monopolize public resources.
+```bash
+git clone <repo-url>
+cd ddAutoSub
+```
 
-* The developer is not responsible for any consequences resulting from the use of this script, including but not limited to account suspension or system restrictions.
+### 2. 安装 Python 依赖
 
-* Please follow the venue management regulations and use the system fairly.
+```bash
+pip install requests mitmproxy
+```
 
-## ❗Attention
+### 3. 生成并信任 mitmproxy CA 证书（仅需一次）
 
-* When running the program, please close the packet capture software such as Charles and Fiddler.
+```bash
+# 生成证书
+mitmdump
+# 看到 "HTTP(S) proxy listening at *:8080" 后按 Ctrl+C 退出
+
+# 信任证书
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain \
+  ~/.mitmproxy/mitmproxy-ca-cert.pem
+```
+
+### 4. 启动应用
+
+```bash
+python3 ddAutoSubV6.py
+```
+
+---
+
+## 📖 使用说明
+
+### 第一步：抓取凭证
+
+1. 点击 **「抓取凭证」** 按钮
+2. 应用会自动：
+   - 启动 mitmproxy 代理（端口 8080）
+   - 设置系统 HTTP/HTTPS 代理
+   - 重启钉钉
+3. 在钉钉中打开**体育预约页面**
+4. 看到 `已就绪 · 可开始抢场` 时说明抓取成功
+
+### 第二步：选择时间段
+
+在下拉菜单中选择你要预约的时间段（支持单小时和连续两小时）。
+
+### 第三步：启动定时任务
+
+点击 **「定时抢场 · 今晚 20:00」**，应用会在后台倒计时，20:00 准时发起请求。预约结果会弹窗提示，详细日志可查看 `~/Library/Logs/ddAutoSub/` 目录。
+
+---
+
+## ⚙️ 高级配置
+
+以下配置项已内置在代码中，如需修改可编辑 `ddAutoSubV6.py`：
+
+| 配置项 | 默认值 | 位置 |
+|--------|--------|------|
+| 场地号 | `1,2,3,4,9,10,11,12` | `__init__` → `self._sites` |
+| 403 重试次数 | `3` | `__init__` → `self._max_403_retries` |
+| 预约日期 | 当天 + 2 天 | `__init__` → `self._date` |
+| 场馆名称 | 综合馆羽毛球 | `start_task` → `config` |
+
+---
+
+## 🔧 打包为独立应用
+
+如果想分发给没有 Python 环境的同学：
+
+```bash
+# 安装 PyInstaller
+pip install pyinstaller
+
+# 打包（无命令行窗口）
+python3 -m PyInstaller --windowed --name "无敌抢场王" --clean ddAutoSubV6.py
+
+# 产物在 dist/无敌抢场王.app
+```
+
+> ⚠️ 方案 A 打包（当前方式）：用户仍需自行安装 mitmproxy 并信任证书。
+
+---
+
+## ❓ 常见问题
+
+### Q: 点击「抓取凭证」后提示 "未检测到 mitmproxy"
+
+A: 终端执行 `pip install mitmproxy` 安装后再试。
+
+### Q: 抓取一直不成功
+
+A: 请确认：
+1. mitmproxy CA 证书已信任（打开钥匙串 → 搜索 mitmproxy → 显示简介 → 信任 → 始终信任）
+2. 系统代理已正确设置（系统偏好设置 → 网络 → 高级 → 代理 → 网页代理和安全网页代理）
+3. 钉钉已完全退出后重新打开
+
+### Q: 20:00 到了但没有抢到
+
+A: 查看 `~/Library/Logs/ddAutoSub/` 中当天的日志文件，常见原因：
+- `403 Forbidden` — Token 已过期，请重新抓取凭证
+- `校验失败` — 该时段已被其他人抢走
+- `连接失败` — 网络问题，检查 VPN 或校园网连接
+
+### Q: 双击 `.app` 没反应
+
+A: 确认已安装 mitmproxy 并信任证书。查看 `~/Library/Logs/ddAutoSub/` 中是否有日志文件，如有则说明应用已启动但可能有其他错误。
+
+---
+
+## 🏗 项目结构
+
+```
+ddAutoSub/
+├── ddAutoSubV5.py          # V5 版本：多场地并发 + 403自动刷新
+├── ddAutoSubV6.py          # V6 版本：V5 基础 + 一键抓包 + 极简UI
+├── README.md               # 本文件
+└── dist/
+    └── 无敌抢场王.app       # macOS 打包产物
+```
+
+---
+
+## 📝 版本历史
+
+| 版本 | 核心改进 |
+|------|----------|
+| V5 | 多场地并发、403 自动刷新 Token、错峰秒杀 |
+| **V6** | **一键抓包获取凭证、极简 UI、日志路径修复、macOS 打包** |
+
+---
+
+## 📄 许可协议
+
+[MIT License](LICENSE)
+
+---
+
+> 本项目仅供学习交流使用。抢场有风险，入坑需谨慎。🎾
