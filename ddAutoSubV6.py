@@ -350,7 +350,7 @@ class TokenCapturer:
 # ==================== 后端逻辑 ====================
 
 class HDUSportsBooker:
-    def __init__(self, token, user_agent, openid="241080010", nickname="项利豪", phone="18457777858",
+    def __init__(self, token, user_agent, openid="XXX", nickname="XXX", phone="XXX",
                  log_callback=print, max_403_retries=3, token_refresh_endpoint=None):
         self.base_url = "https://sportmeta.hdu.edu.cn"
         self.token = token
