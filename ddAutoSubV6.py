@@ -76,6 +76,19 @@ class CaptureAddon:
                 "url": flow.request.pretty_url
             }}
 
+            # 尝试从请求体提取 openid / nickname / phone
+            try:
+                body = flow.request.get_text()
+                if body:
+                    body_json = json.loads(body)
+                    order = body_json.get("orderData", body_json)
+                    for key in ("openid", "nickname", "phone"):
+                        val = order.get(key, "")
+                        if val:
+                            data[key] = val
+            except Exception:
+                pass
+
             with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -301,23 +314,26 @@ class TokenCapturer:
     def check_result(self):
         """
         轮询检查是否已捕获到数据。
-        返回 (token: str|None, user_agent: str|None)
+        返回 (token: str|None, user_agent: str|None, openid: str, nickname: str, phone: str)
         """
         if not self.capture_file or not os.path.exists(self.capture_file):
-            return None, None
+            return None, None, "", "", ""
 
         try:
             with open(self.capture_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             token = data.get("token", "")
             ua = data.get("user_agent", "")
+            openid = data.get("openid", "")
+            nickname = data.get("nickname", "")
+            phone = data.get("phone", "")
             if token:
-                self.log(f"🎯 捕获成功! Token 长度:{len(token)}, 来源:{data.get('host', '?')}")
-                return token, ua
+                self.log(f"🎯 捕获成功! Token 长度:{len(token)}, openid:{openid}, 来源:{data.get('host', '?')}")
+                return token, ua, openid, nickname, phone
         except (json.JSONDecodeError, IOError):
             pass
 
-        return None, None
+        return None, None, "", "", ""
 
     def stop(self):
         """停止抓包，恢复系统代理，清理临时文件"""
@@ -350,7 +366,7 @@ class TokenCapturer:
 # ==================== 后端逻辑 ====================
 
 class HDUSportsBooker:
-    def __init__(self, token, user_agent, openid="XXX", nickname="XXX", phone="XXX",
+    def __init__(self, token, user_agent, openid="", nickname="", phone="",
                  log_callback=print, max_403_retries=3, token_refresh_endpoint=None):
         self.base_url = "https://sportmeta.hdu.edu.cn"
         self.token = token
@@ -764,6 +780,9 @@ class BookingApp:
         # ── 内部状态 ────────────────────────────
         self._captured_token = ""
         self._captured_ua = ""
+        self._captured_openid = ""
+        self._captured_nickname = ""
+        self._captured_phone = ""
         self._date = (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d")
         self._sites = [1, 2, 3, 4, 9, 10, 11, 12]
         self._max_403_retries = 3
@@ -917,18 +936,18 @@ class BookingApp:
         if self.capturer is None:
             return
 
-        token, ua = self.capturer.check_result()
+        token, ua, openid, nickname, phone = self.capturer.check_result()
 
         if token:
             # 抓取成功！
-            self._on_capture_success(token, ua)
+            self._on_capture_success(token, ua, openid, nickname, phone)
             return
 
         # 超时检查（2 分钟后停止）
         # 继续轮询
         self._capture_poll_id = self.root.after(500, self._schedule_poll)
 
-    def _on_capture_success(self, token, ua):
+    def _on_capture_success(self, token, ua, openid, nickname, phone):
         """抓取成功后更新 UI"""
         if self._capture_poll_id:
             self.root.after_cancel(self._capture_poll_id)
@@ -937,6 +956,9 @@ class BookingApp:
         # 存入内部变量
         self._captured_token = token
         self._captured_ua = ua
+        self._captured_openid = openid
+        self._captured_nickname = nickname
+        self._captured_phone = phone
 
         # 清理抓取器
         if self.capturer:
@@ -981,6 +1003,9 @@ class BookingApp:
 
         token = self._captured_token
         ua = self._captured_ua
+        openid = self._captured_openid
+        nickname = self._captured_nickname
+        phone = self._captured_phone
 
         if not token or not ua:
             messagebox.showerror("错误", "请先点击「一键抓取」获取 Token 和 UA")
@@ -1006,11 +1031,11 @@ class BookingApp:
         refresh_url = None
 
         threading.Thread(target=self.wait_and_run,
-                          args=(token, ua, config, target_sites,
+                          args=(token, ua, openid, nickname, phone, config, target_sites,
                                 max_403_retries, refresh_url),
                           daemon=True).start()
 
-    def wait_and_run(self, token, ua, config, target_sites, max_403_retries, refresh_url):
+    def wait_and_run(self, token, ua, openid, nickname, phone, config, target_sites, max_403_retries, refresh_url):
         self.log(f"任务已启动，等待20:00开抢 | 场地:{target_sites} | 403重试次数:{max_403_retries}")
         if refresh_url:
             self.log(f"🔗 Token刷新端点: {refresh_url}")
@@ -1031,7 +1056,7 @@ class BookingApp:
             cfg["site_id"] = sid
 
             t = threading.Thread(target=self.site_worker,
-                                  args=(token, ua, cfg, max_403_retries, refresh_url))
+                                  args=(token, ua, openid, nickname, phone, cfg, max_403_retries, refresh_url))
             threads.append(t)
             t.start()
             time.sleep(0.08)
@@ -1051,9 +1076,9 @@ class BookingApp:
 
         self.root.after(0, done)
 
-    def site_worker(self, token, ua, cfg, max_403_retries, refresh_url):
+    def site_worker(self, token, ua, openid, nickname, phone, cfg, max_403_retries, refresh_url):
         booker = HDUSportsBooker(
-            token, ua,
+            token, ua, openid, nickname, phone,
             log_callback=self.log,
             max_403_retries=max_403_retries,
             token_refresh_endpoint=refresh_url
